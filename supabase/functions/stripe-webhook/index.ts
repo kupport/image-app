@@ -3,10 +3,15 @@
 import Stripe from 'npm:stripe@19';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_API_KEY') ?? '');
+const stripe = new Stripe((Deno.env.get('STRIPE_API_KEY') ?? '').trim());
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
-const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
-const paymentLinkId = Deno.env.get('STRIPE_PAYMENT_LINK_ID') ?? '';
+const webhookSecret = (Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '').trim();
+const paymentLinkId = (Deno.env.get('STRIPE_PAYMENT_LINK_ID') ?? '').trim();
+
+// Without these, events would be rejected or skipped for good; a 500 makes Stripe retry until they are set
+const missingSecrets = ['STRIPE_API_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PAYMENT_LINK_ID'].filter(
+  (name) => !Deno.env.get(name),
+);
 
 // Service role bypasses RLS; it is the only writer of public.subscriptions
 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
@@ -37,7 +42,10 @@ function rowFor(subscription: Stripe.Subscription) {
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (session.mode !== 'subscription' || idOf(session.payment_link) !== paymentLinkId) {
-    console.log(`Ignoring checkout session ${session.id} (not from the subscription payment link)`);
+    console.log(
+      `Ignoring checkout session ${session.id}: mode ${session.mode}, payment link ` +
+        `${idOf(session.payment_link)} (expected STRIPE_PAYMENT_LINK_ID ${JSON.stringify(paymentLinkId)})`,
+    );
     return;
   }
   const userId = session.client_reference_id;
@@ -85,6 +93,10 @@ async function handleSubscriptionChanged(eventSubscription: Stripe.Subscription,
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+  if (missingSecrets.length > 0) {
+    console.error(`Missing Edge Function secrets: ${missingSecrets.join(', ')}`);
+    return new Response('Webhook not configured', { status: 500 });
+  }
 
   const signature = req.headers.get('stripe-signature');
   if (!signature) return new Response('Missing signature', { status: 400 });
