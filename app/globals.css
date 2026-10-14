@@ -353,6 +353,31 @@ label.card:hover, label.card:focus-within { border-color: var(--ink); }
 .auth-switch a { color: var(--ink); text-decoration: underline; }
 .auth-message { font-size: 14px; color: var(--ink); }
 
+/* Paywall */
+.paywall { max-width: 520px; }
+.paywall-lead { margin: 0 0 28px; font-size: 14px; line-height: 1.6; color: #333; }
+.paywall-price {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 22px 0;
+  margin-bottom: 28px;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+.paywall-amount { font-size: 34px; font-weight: 500; }
+.paywall-interval {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+a.paywall-cta { width: 100%; justify-content: center; text-decoration: none; }
+.paywall-note { margin: 16px 0 0; font-size: 12px; color: #555; }
+.paywall-status { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+a.account-logout { text-decoration: none; }
+
 [hidden] { display: none !important; }
 
 /* Responsive */

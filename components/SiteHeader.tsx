@@ -6,12 +6,12 @@ import { BagIcon, HeartIcon, SearchIcon, UserIcon } from './Icons';
 
 const NAV_ITEMS = ['Women', 'Men', 'Kids', 'Home & Design', 'Beauty', 'Try-On', 'Gifting', 'Brands', 'Stores', 'Events'];
 
-export default function SiteHeader({ userName }: { userName?: string }) {
+export default function SiteHeader({ userName, manageUrl }: { userName?: string; manageUrl?: string }) {
   const [showInfo, setShowInfo] = useState(true);
 
   return (
     <>
-      <div className="top-strip"><u>Free</u> AI virtual try-on: upload &amp; generate now!</div>
+      <div className="top-strip">AI virtual try-on: <u>unlimited looks</u> for $9.99/month</div>
 
       <header className="header">
         <div className="header-left">
@@ -25,6 +25,7 @@ export default function SiteHeader({ userName }: { userName?: string }) {
             <form className="account" action={logout}>
               <UserIcon />
               <span className="account-name">{userName}</span>
+              {manageUrl && <a className="account-logout" href={manageUrl}>Subscription</a>}
               <button type="submit" className="account-logout">Log out</button>
             </form>
           ) : (

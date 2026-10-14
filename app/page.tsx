@@ -1,6 +1,7 @@
 import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { customerPortalUrl, hasActiveSubscription } from '@/lib/access';
 import SiteHeader from '@/components/SiteHeader';
 import TryOn from '@/components/TryOn';
 
@@ -13,12 +14,15 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  // Signed-in users without an active subscription go to the paywall
+  if (!(await hasActiveSubscription(supabase, user.id))) redirect('/pay');
+
   const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
   const userName = profile?.full_name ?? user.user_metadata.full_name ?? user.email;
 
   return (
     <>
-      <SiteHeader userName={userName} />
+      <SiteHeader userName={userName} manageUrl={customerPortalUrl()} />
       <main className="content">
         <ol className="breadcrumb">
           <li><a href="#">Home</a></li>
