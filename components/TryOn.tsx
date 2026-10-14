@@ -21,6 +21,11 @@ async function generateImage(file1: File, file2: File): Promise<string> {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 
+    if (response.status === 401) {
+      // Session expired: send the user back to log in
+      window.location.assign('/login');
+      throw new Error('Please log in again.');
+    }
     if (!response.ok) {
       const body = await response.json().catch(() => null);
       throw new Error(typeof body?.error === 'string' ? body.error : `Request failed (status ${response.status}).`);

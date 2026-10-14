@@ -1,7 +1,9 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { MAX_UPLOAD_BYTES, sniffImageType, validateImageFile } from '@/lib/images';
+import { clientIp } from '@/lib/clientIp';
 import { rateLimit } from '@/lib/rateLimit';
+import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,11 +17,6 @@ const RATE_WINDOW_MS = 60 * 1000;
 
 function jsonError(message: string, status: number, headers?: HeadersInit) {
   return NextResponse.json({ error: message }, { status, headers: { 'Cache-Control': 'no-store', ...headers } });
-}
-
-function clientIp(request: NextRequest) {
-  // Only trustworthy behind a proxy that overwrites x-forwarded-for (e.g. Vercel, a configured nginx)
-  return request.headers.get('x-forwarded-for')?.split(',')[0].trim() || request.headers.get('x-real-ip') || 'unknown';
 }
 
 function isSameOrigin(request: NextRequest) {
@@ -45,7 +42,14 @@ export async function POST(request: NextRequest) {
     return jsonError('Forbidden.', 403);
   }
 
-  const { allowed, retryAfterSeconds } = rateLimit(clientIp(request), RATE_LIMIT, RATE_WINDOW_MS);
+  // Only signed-in users may generate (and so reach the n8n webhook)
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return jsonError('Please log in.', 401);
+  }
+
+  const { allowed, retryAfterSeconds } = rateLimit(clientIp(request.headers), RATE_LIMIT, RATE_WINDOW_MS);
   if (!allowed) {
     return jsonError('Too many requests. Please wait a moment and try again.', 429, {
       'Retry-After': String(retryAfterSeconds),
