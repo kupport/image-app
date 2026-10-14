@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { logout } from '@/app/auth/actions';
 import { BagIcon, HeartIcon, SearchIcon, UserIcon } from './Icons';
 
 const NAV_ITEMS = ['Women', 'Men', 'Kids', 'Home & Design', 'Beauty', 'Try-On', 'Gifting', 'Brands', 'Stores', 'Events'];
 
-export default function SiteHeader() {
+export default function SiteHeader({ userName }: { userName?: string }) {
   const [showInfo, setShowInfo] = useState(true);
 
   return (
@@ -20,7 +21,15 @@ export default function SiteHeader() {
         <a className="wordmark" href="#">ATELIER</a>
         <div className="header-right">
           <span className="discover">Discover <span className="discover-badge">Try-On Studio</span></span>
-          <UserIcon />
+          {userName ? (
+            <form className="account" action={logout}>
+              <UserIcon />
+              <span className="account-name">{userName}</span>
+              <button type="submit" className="account-logout">Log out</button>
+            </form>
+          ) : (
+            <a className="account" href="/login" aria-label="Log in"><UserIcon /></a>
+          )}
           <HeartIcon />
           <BagIcon />
           <span className="lang"><strong>EN</strong><span className="lang-sep" />IT</span>
