@@ -26,6 +26,11 @@ async function generateImage(file1: File, file2: File): Promise<string> {
       window.location.assign('/login');
       throw new Error('Please log in again.');
     }
+    if (response.status === 402) {
+      // Subscription ended: send the user to the paywall to renew
+      window.location.assign('/pay');
+      throw new Error('An active subscription is required.');
+    }
     if (!response.ok) {
       const body = await response.json().catch(() => null);
       throw new Error(typeof body?.error === 'string' ? body.error : `Request failed (status ${response.status}).`);

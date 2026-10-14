@@ -4,6 +4,7 @@ import { MAX_UPLOAD_BYTES, sniffImageType, validateImageFile } from '@/lib/image
 import { clientIp } from '@/lib/clientIp';
 import { rateLimit } from '@/lib/rateLimit';
 import { createClient } from '@/lib/supabase/server';
+import { hasActiveSubscription } from '@/lib/access';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,6 +48,11 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return jsonError('Please log in.', 401);
+  }
+
+  // Only users with an active (paid) subscription may generate
+  if (!(await hasActiveSubscription(supabase, user.id))) {
+    return jsonError('An active subscription is required.', 402);
   }
 
   const { allowed, retryAfterSeconds } = rateLimit(clientIp(request.headers), RATE_LIMIT, RATE_WINDOW_MS);
